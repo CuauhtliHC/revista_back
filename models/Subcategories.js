@@ -1,9 +1,9 @@
 const s = require("sequelize");
 const db = require("../config/db");
 
-class SubCategorie extends s.Model {}
+class SubCategory extends s.Model {}
 
-SubCategorie.init(
+SubCategory.init(
   {
     id: {
       type: s.INTEGER,
@@ -14,12 +14,40 @@ SubCategorie.init(
       type: s.STRING,
       allowNull: false,
     },
-    id_category: {
-      type: s.INTEGER,
-      allowNull: false,
+    icon_image: {
+      type: s.STRING,
+      // allowNull: false,
+    },
+    color: {
+      type: s.STRING,
+      // allowNull: false
+    },
+    url: {
+      type: s.STRING,
     },
   },
-  { sequelize: db, modelName: "subCategorie" }
+  { sequelize: db, modelName: "subCategory" }
 );
 
-module.exports = SubCategorie;
+SubCategory.beforeBulkCreate((subcategories, options) => {
+  subcategories.map((subcategory)=>{
+    if (subcategory.name) {
+      subcategory.url = subcategory.name.replace(/\s+/g, "_").replace(/\W/g, "");
+      options.fields.push("url");
+    }
+  })
+});
+
+SubCategory.beforeValidate((subcategory, options) => {
+  if (subcategory.name) {
+    subcategory.url = subcategory.name.replace(/\s+/g, "_").replace(/\W/g, "");
+    options.fields.push("url");
+  }
+});
+
+SubCategory.beforeUpdate((subcategory, options) => {
+  subcategory.url = subcategory.name.replace(/\s+/g, "_").replace(/\W/g, "");
+  options.fields.push("url");
+});
+
+module.exports = SubCategory;

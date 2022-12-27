@@ -1,47 +1,47 @@
 const categoriesServices = require("../services/categoriesServices.js");
 
 // GET ALL CATEGORIES
-exports.index = (req, res) => {
-    categoriesServices
+exports.index = (req, res, next) => {
+  categoriesServices
     .findAll()
     .then((categories) => res.status(200).send(categories))
-    .catch((err) => res.status(400).send(err));
+    .catch(next);
 };
 
-// GET CATEGORY BY ID
-exports.findById = (req, res) => {
-  const id = req.params.id;
+// GET Category BY URL
+exports.findByUrl = (req, res, next) => {
+  const { url } = req.params;
   categoriesServices
-    .findById(id)
-    .then((category) => res.status(200).send(category))
-    .catch((err) => res.status(400).send(err));
+    .findByUrl(url)
+    .then((category) => res.status(200).json(category))
+    .catch(next);
 };
 
 //ADMIN CONTROLLERS
 
-// CREATE NEW CATEGORY
-exports.createCategory = (req, res) => {
+// CREATE NEW category
+exports.createCategory = (req, res, next) => {
   const category = req.body;
   categoriesServices
     .create(category)
     .then((createdCategory) => res.status(201).send(createdCategory))
-    .catch((err) => res.status(400).send(err));
+    .catch(next);
 };
 
-// CHANGE CATEGORY
-exports.changeCategory = (req, res) => {
+// CHANGE Category
+exports.changeCategory = (req, res, next) => {
   const id = req.params.id;
   categoriesServices
     .change(id, req.body)
     .then((updatedCategory) => res.status(200).send(updatedCategory))
-    .catch((err) => res.status(404).send(err));
+    .catch(next);
 };
 
-// DELETE CATEGORY
-exports.deleteCategory = (req, res) => {
+// DELETE Category
+exports.deleteCategory = (req, res, next) => {
   const id = req.params.id;
   categoriesServices
     .delete(id)
     .then(() => res.status(204).send("Category deleted"))
-    .catch((err) => res.status(404).send(err));
+    .catch(next);
 };

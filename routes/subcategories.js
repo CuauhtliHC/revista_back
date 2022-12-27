@@ -5,18 +5,20 @@ const subcategoriesControllers = require("../controllers/subcategoriesController
 // GET ALL SUBCATEGORIES
 router.get("/", subcategoriesControllers.index);
 
-// GET SUBCATEGORY BY ID
-router.get("/:id", subcategoriesControllers.findById);
+// GET subCategory BY ID
+router.get("/findByUrl/:url", subcategoriesControllers.findByUrl);
+
+router.get("/findByCategory/:name", subcategoriesControllers.findByCategory);
 
 //ADMIN ROUTES
 
-// CREATE NEW SUBCATEGORY
-router.post("/create", subcategoriesControllers.createSubcategory);
+// CREATE NEW subCategory
+router.post("/create", subcategoriesControllers.createSubCategory);
 
-// CHANGE SUBCATEGORY
-router.put("/change/:id", subcategoriesControllers.changeSubcategory);
+// CHANGE subCategory
+router.put("/change/:id", subcategoriesControllers.changeSubCategory);
 
-// DELETE SUBCATEGORY
+// DELETE subCategory
 router.delete("/delete/:id", subcategoriesControllers.deleteSubcategory);
 
 module.exports = router;

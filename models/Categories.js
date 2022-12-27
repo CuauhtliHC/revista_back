@@ -14,8 +14,48 @@ Categorie.init(
       type: s.STRING,
       allowNull: false,
     },
+    description: {
+      type: s.STRING,
+      allowNull: false,
+    },
+    image: {
+      type: s.STRING,
+      allowNull: false,
+    },
+    icon_image: {
+      type: s.STRING,
+      allowNull: false,
+    },
+    color: {
+      type: s.STRING,
+      allowNull: false
+    },
+    url: {
+      type: s.STRING,
+    },
   },
   { sequelize: db, modelName: "categories" }
 );
+
+Categorie.beforeBulkCreate((categories, options) => {
+  categories.map((categorie) => {
+    if (categorie.name) {
+      categorie.url = categorie.name.replace(/\s+/g, "_").replace(/\W/g, "");
+      options.fields.push("url");
+    }
+  });
+});
+
+Categorie.beforeValidate((categorie, options) => {
+  if (categorie.name) {
+    categorie.url = categorie.name.replace(/\s+/g, "_").replace(/\W/g, "");
+    options.fields.push("url");
+  }
+});
+
+Categorie.beforeUpdate((categorie, options) => {
+  categorie.url = categorie.name.replace(/\s+/g, "_").replace(/\W/g, "");
+  options.fields.push("url");
+});
 
 module.exports = Categorie;

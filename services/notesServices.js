@@ -1,132 +1,231 @@
-// const { Note } = require("../models");
-// const sequelize = require("sequelize");
-// const Op = sequelize.Op;
+const { Note, SubCategory, Category, Subject } = require("../models");
+const sequelize = require("sequelize");
+const Op = sequelize.Op;
+const subCategoriesServices = require("./subcategoriesServices");
+const subjectServices = require("./subjectsServices");
 
-// GET ALL NOTES
-// exports.findAll = async () => {
-//   let notes = await Note.findAll({
-//     include: [
-//       {
-//         model: Review,
-//         required: false,
-//         attributes: { exclude: ["createdAt", "updatedAt"] },
-//       },
-//     ],
-//     attributes: { exclude: ["bookOrderId"] },
-//   });
-//   await getGenre(books);
-//   return books;
-// };
+exports.findByUrl = async (url) => {
+  let note = await Note.findOne({
+    where: { url: url },
+    include: [
+      { model: SubCategory, include: [Category] },
+      { model: Subject, as: "subject" },
+    ],
+  });
+  return note;
+};
 
-// GET NOTE BY ID
-// exports.findById = async (id) => {
-//   let book = await Book.findByPk(id, {
-//     include: [
-//       {
-//         model: Review,
-//         required: false,
-//         attributes: { exclude: ["createdAt", "updatedAt"] },
-//       },
-//     ],
-//     attributes: { exclude: ["bookOrderId"] },
-//   });
-//   await getGenre([book]);
-//   return book;
-// };
+exports.findAll = async () => {
+  let notes = await Note.findAll({
+    include: [
+      { model: SubCategory, include: [Category] },
+      { model: Subject, as: "subject" },
+    ],
+  });
+  return notes;
+};
 
-// SEARCH NOTE
-// exports.searchByQueryString = async (queryString) => {
-//   let books = await Book.findAll({
-//     where: {
-//       [Op.or]: [
-//         {
-//           title: {
-//             [Op.iLike]: "%" + queryString + "%",
-//           },
-//         },
-//         {
-//           author: {
-//             [Op.iLike]: "%" + queryString + "%",
-//           },
-//         },
-//       ],
-//       deleted: false,
-//     },
-//     include: [
-//       {
-//         model: Review,
-//         required: false,
-//         attributes: { exclude: ["createdAt", "updatedAt"] },
-//       },
-//     ],
-//     attributes: { exclude: ["bookOrderId"] },
-//   });
-//   await getGenre(books);
-//   return books;
-// };
+exports.findAllPagination = async (page) => {
+  let notes = await Note.findAndCountAll({
+    limit: 12,
+    offset: page ? page * 12 : 0,
+    include: [
+      { model: SubCategory, include: [Category] },
+      { model: Subject, as: "subject" },
+    ],
+    attributes: [
+      "id",
+      "title",
+      "field_title_pre",
+      "field_title",
+      "field_description",
+      "author",
+      "field_img_primary",
+      "url",
+    ],
+    order: [["id", "DESC"]],
+  });
+  return notes;
+};
 
-//ADMIN SERVICES
+exports.findAllWithLimit = async (limit) => {
+  let notes = await Note.findAndCountAll({
+    limit: limit,
+    offset: 0,
+    include: [
+      { model: SubCategory, include: [Category] },
+      { model: Subject, as: "subject" },
+    ],
+    attributes: [
+      "id",
+      "title",
+      "field_title_pre",
+      "field_title",
+      "field_description",
+      "author",
+      "field_img_primary",
+      "url",
+    ],
+    order: [["id", "DESC"]],
+  });
+  return notes;
+};
 
-// CREATE NEW NOTE
-// exports.create = async (book) => {
-//   let bookGenre = book.genre;
-//   let [genre] = await Genre.findOrCreate({
-//     where: { name: bookGenre },
-//   });
-//   let newBook = {
-//     title: book.title,
-//     author: book.author,
-//     genreId: genre.dataValues.id,
-//     description: book.description,
-//     editorial: book.editorial,
-//     front: book.front,
-//     price: book.price,
-//     stock: book.stock,
-//     deleted: book.deleted,
-//   };
-//   return await Book.create(newBook);
-// };
+exports.searchByQueryString = async (queryString) => {
+  let str = queryString.toLowerCase();
+  let notes = await Note.findAll({
+    where: {
+      [Op.or]: [
+        {
+          title: sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("title")),
+            "LIKE",
+            "%" + str + "%"
+          ),
+        },
+        {
+          "$subCategory.name$": sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("subCategory.name")),
+            "LIKE",
+            "%" + str + "%"
+          ),
+        },
+      ],
+    },
+    include: [
+      { model: SubCategory, include: [Category] },
+      { model: Subject, as: "subject" },
+    ],
+  });
+  return notes;
+};
 
-// CHANGE NOTE
-// exports.change = async (id, body) => {
-//   let book = await Book.findByPk(id);
-//   let genreName = body.genre;
-//   let genre = await Genre.findOne(
-//     { where: { name: genreName } },
-//     {
-//       attributes: { exclude: ["createdAt", "updatedAt", "bookId", "id"] },
-//     }
-//   );
-//   let newBody = {
-//     title: body.title,
-//     author: body.author,
-//     genreId: genre.dataValues.id,
-//     description: body.description,
-//     editorial: body.editorial,
-//     front: body.front,
-//     price: body.price,
-//     stock: body.stock,
-//     deleted: body.deleted,
-//   };
-//   await book.update(newBody);
-//   return book;
-// };
+exports.findByCategory = async (url) => {
+  const notes = await Note.findAll({
+    include: [
+      {
+        model: SubCategory,
+        include: [{ model: Category, where: { url: url } }],
+      },
+    ],
+    order: [["id", "DESC"]],
+  });
+  return notes;
+};
 
-// DELETE NOTE
-// exports.delete = async (id) => {
-//   let book = await Note.findByPk(id);
-//   book.destroy({ deleted: true });
-//   return book;
-// };
+exports.findByCategoryForBlock = async (url) => {
+  const notes = await Note.findAll({
+    include: [
+      {
+        model: SubCategory,
+        include: [
+          { model: Category, where: { url: url }, attributes: ["url", "name"] },
+        ],
+        attributes: ["url", "name"],
+      },
+    ],
+    attributes: [
+      "id",
+      "title",
+      "field_img_primary",
+      "field_title",
+      "field_title_pre",
+      "field_description",
+      "url",
+    ],
+    order: [["id", "DESC"]],
+  });
+  return notes;
+};
 
-// ASYNC FUNCTIONS TO GET ALL ADITIONAL INFORMATION
+exports.findBySubCategoryForBlock = async (url) => {
+  const notes = await Note.findAll({
+    include: [
+      {
+        model: SubCategory,
+        where: { url: url },
+        attributes: ["url", "name"],
+      },
+    ],
+    attributes: [
+      "id",
+      "title",
+      "field_img_primary",
+      "field_title",
+      "field_title_pre",
+      "field_description",
+      "url",
+    ],
+    order: [["id", "DESC"]],
+  });
+  return notes;
+};
 
-// async function getGenre(bookArray) {
-//   for (let i = 0; i < bookArray.length; i++) {
-//     let genreId = bookArray[i].genreId;
-//     let genre = await Genre.findByPk(genreId, {
-//       attributes: { exclude: ["createdAt", "updatedAt", "bookId", "id"] },
-//     });
-//     bookArray[i].dataValues.genre = genre.dataValues;
-//   }
-// }
+exports.create = async (note) => {
+  const {
+    title,
+    field_title_pre,
+    field_title,
+    field_description,
+    author,
+    field_img_primary,
+    field_content,
+    urlSubCategory,
+    idSubject,
+  } = note;
+  let noteCreated = await Note.create({
+    title: title,
+    field_title_pre: field_title_pre,
+    field_title: field_title,
+    field_description: field_description,
+    author: author,
+    field_img_primary: field_img_primary,
+    field_content: field_content,
+  });
+  let subcategory = await subCategoriesServices.findByUrl(urlSubCategory);
+  let subject = await subjectServices.findById(idSubject);
+  noteCreated.setSubCategory(subcategory);
+  subject.setNote(noteCreated);
+  return noteCreated;
+};
+
+exports.change = async (id, body) => {
+  const {
+    title,
+    field_title_pre,
+    field_title,
+    field_description,
+    author,
+    field_img_primary,
+    field_content,
+    urlSubCategory,
+    idSubject,
+  } = body;
+  let noteUpdate = await Note.update(
+    {
+      title: title,
+      field_title_pre: field_title_pre,
+      field_title: field_title,
+      field_description: field_description,
+      author: author,
+      field_img_primary: field_img_primary,
+      field_content: field_content,
+    },
+    {
+      where: { id: id },
+      individualHooks: true,
+      returning: true,
+      plain: true,
+    }
+  );
+  let subcategory = await subCategoriesServices.findByUrl(urlSubCategory);
+  let subject = await subjectServices.findById(idSubject);
+  noteUpdate[1].setSubCategory(subcategory);
+  subject.setNote(noteUpdate[1]);
+  return noteUpdate;
+};
+
+exports.delete = async (id) => {
+  let note = await Note.destroy({ where: { id: id } });
+  return note;
+};
